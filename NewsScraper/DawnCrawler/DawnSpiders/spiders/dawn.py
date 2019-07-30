@@ -4,6 +4,10 @@ from scrapy import Item
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
 
+""" 
+   the item schema
+"""
+
 
 class DawnscraperItem(Item):
     title = scrapy.Field()
@@ -43,14 +47,29 @@ class DawnSpider(CrawlSpider):
     def parse_items(self, response):
 
         article = DawnscraperItem()
+
         article['title'] = response.css("a.story__link::text")[0].extract().replace("\n", " ")
 
+        """
+           3 kinds of selectors for
+           3 kinds of article pages
+        """
         image_urls = [response.css('.media__item img').xpath('@src').get(),
                       response.css(".story__content .media--expand-25 img::attr(src)").extract(),
                       response.xpath('/html/body/div/div/figure/div/img').xpath('@src').extract()]
-
+        """
+           removing empty lists from
+           url lists in case some of
+           the above selectors return
+           no result
+        """
         image_urls = [image_index for image_index in image_urls if image_index != []]
         article['image_urls'] = image_urls
+
+        """
+        some articles have updated_date
+        as well
+        """
 
         published_date = response.css("span.story__time::text")[0].extract()
         article['published_date'] = published_date
@@ -65,6 +84,12 @@ class DawnSpider(CrawlSpider):
         article['tweets'] = response.css(".Twitter-tweet a::attr(href)").extract()
 
         article['comments'] = response.css(".comment__body p::text").extract()
+
+        """
+        3 kind of selectors
+        for 3 kinds of content
+        html structures
+        """
 
         content = response.css(".pt-4 p::text").extract()
         content.append(response.css(".mt-1 p::text").extract())
