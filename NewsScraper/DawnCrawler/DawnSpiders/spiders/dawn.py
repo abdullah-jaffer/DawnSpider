@@ -62,7 +62,7 @@ class DawnSpider(CrawlSpider):
         # below logic converts users and comments into a list of dictionaries
         article['comments'] = [{'user': user[comm_indx], 'content': comment[comm_indx]} for comm_indx in
                                range(len(user))]
-        # content is divided into different selectors, so below logic joins it into a string
+        # content is returned as a list, so below logic joins it into a string
         article['content'] = response.css(".story__content ::text").getall()
         article['content'] = ' '.join(map(str, article['content']))
         article['content'] = article['content'].replace("\n", " ").replace("\t", " ")
