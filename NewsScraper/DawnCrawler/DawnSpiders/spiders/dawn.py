@@ -1,43 +1,37 @@
-# -*- coding: utf-8 -*-
-import scrapy
-from scrapy import Item
+from DawnSpiders.items import ArticleItem
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
-
-""" 
-   the item schema
-"""
-
-
-class DawnscraperItem(Item):
-    title = scrapy.Field()
-    image_urls = scrapy.Field()
-    published_date = scrapy.Field()
-    updated_date = scrapy.Field()
-    authors = scrapy.Field()
-    tweets = scrapy.Field()
-    comments = scrapy.Field()
-    content = scrapy.Field()
-    category = scrapy.Field()
 
 
 class DawnSpider(CrawlSpider):
     name = 'dawn'
     allowed_domains = ['dawn.com']
     start_urls = [
-        "https://www.dawn.com/latest-news",
-        "https://www.dawn.com/business",
-        "https://www.dawn.com/opinion",
-        "https://www.dawn.com/prism",
-        "https://www.dawn.com/sport",
-        "https://www.dawn.com/magazines",
-        "https://www.dawn.com/world",
-        "https://www.dawn.com/tech",
-        "https://www.dawn.com/multimedia",
-        "https://www.dawn.com/in-depth/"
-    ]
+        "https://www.dawn.com/"
 
+    ]
     rules = (
+        Rule(
+            LinkExtractor(restrict_xpaths=[
+                "//li[@class='nav__item--pakistan']",
+                "//li[@class='nav__item--business']",
+                "//li[@class='nav__item--opinion']",
+                "//li[@class='nav__item--prism ']",
+                "//li[@class='nav__item--entertainment']",
+                "//li[@class='nav__item--sport']",
+                "//li[@class='nav__item--magazines']",
+                "//li[@class='nav__item--world']",
+                "//li[@class='nav__item--tech']",
+                "//li[@class='nav__item--popular ']",
+                "//li[@class='nav__item--multimedia']",
+                "//li[@class='nav__item--newspaper']",
+                "//li[@class='nav__item--in-depth ']",
+            ],
+
+            ),
+            callback='parse',
+            follow=True
+        ),
         Rule(
             LinkExtractor(allow='.*/news/.*'),
             callback='parse_items', follow=True),
@@ -46,59 +40,32 @@ class DawnSpider(CrawlSpider):
 
     def parse_items(self, response):
 
-        article = DawnscraperItem()
+        article = ArticleItem()
 
-        article['title'] = response.css("a.story__link::text")[0].extract().replace("\n", " ")
+        article['title'] = response.css(".template__header .story__link::text").get().replace("\n", " ")
 
-        """
-           3 kinds of selectors for
-           3 kinds of article pages
-        """
-        image_urls = [response.css('.media__item img').xpath('@src').get(),
-                      response.css(".story__content .media--expand-25 img::attr(src)").extract(),
-                      response.xpath('/html/body/div/div/figure/div/img').xpath('@src').extract()]
-        """
-           removing empty lists from
-           url lists in case some of
-           the above selectors return
-           no result
-        """
-        image_urls = [image_index for image_index in image_urls if image_index != []]
-        article['image_urls'] = image_urls
+        article['cover_image_url'] = response.css(".media--uneven img::attr(src)").get()
+        article['image_urls'] = response.css(".media--center ::attr(src)").getall()
 
-        """
-        some articles have updated_date
-        as well
-        """
-
-        published_date = response.css("span.story__time::text")[0].extract()
-        article['published_date'] = published_date
-
-        article['updated_date'] = response.css(".timestamp--time::text").extract()
-
-        if "|" in response.css(".text-grey a::text")[0].extract():
-            article['authors'] = response.css(".sm-inline-block.sm-float-left a::text").extract()
+        article['published_date'] = response.css(".story__time::text").get()
+        article['updated_date'] = response.css(".timestamp--time::text").getall()
+        # authors can have different selectors depending upon page type
+        if response.css(".template__header .story__byline a::text").getall():
+            article['authors'] = response.css(".template__header .story__byline a::text").getall()
         else:
-            article['authors'] = response.css(".text-grey a::text").extract()
+            article['authors'] = response.css(".template__main .story__byline a::text").getall()
 
-        article['tweets'] = response.css(".Twitter-tweet a::attr(href)").extract()
+        article['tweets'] = response.css(".Twitter-tweet a::attr(href)").getall()
 
-        article['comments'] = response.css(".comment__body p::text").extract()
-
-        """
-        3 kind of selectors
-        for 3 kinds of content
-        html structures
-        """
-
-        content = response.css(".pt-4 p::text").extract()
-        content.append(response.css(".mt-1 p::text").extract())
-        content.append(response.css(".story__content p::text").extract())
-
-        content = [content_index for content_index in content if content_index != []]
-
-        content = ' '.join(map(str, content[0]))
-        article['content'] = content.replace("\n", " ")
+        user = response.css(".comment__author::text").getall()
+        comment = response.css(".comment__body p::text").getall()
+        # below logic converts users and comments into a list of dictionaries
+        article['comments'] = [{'user': user[comm_indx], 'content': comment[comm_indx]} for comm_indx in
+                               range(len(user))]
+        # content is divided into different selectors, so below logic joins it into a string
+        article['content'] = response.css(".story__content ::text").getall()
+        article['content'] = ' '.join(map(str, article['content']))
+        article['content'] = article['content'].replace("\n", " ").replace("\t", " ")
 
         article['category'] = response.css(".active a::text").get()
 
