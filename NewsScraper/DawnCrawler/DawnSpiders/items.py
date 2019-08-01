@@ -13,4 +13,3 @@ class ArticleItem(scrapy.Item):
     content = scrapy.Field()
     category = scrapy.Field()
     cover_image_url = scrapy.Field()
-
