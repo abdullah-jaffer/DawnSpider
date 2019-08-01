@@ -46,7 +46,7 @@ class DawnSpider(CrawlSpider):
         article['image_urls'] = response.css(".media--center ::attr(src)").getall()
         article['published_date'] = response.css(".story__time::text").get()
         article['updated_date'] = response.css(".timestamp--time::text").getall()
-
+        
         # authors can have different selectors depending upon page type
         if response.css(".template__header .story__byline a::text").getall():
             article['authors'] = response.css(".template__header .story__byline a::text").getall()
@@ -59,7 +59,7 @@ class DawnSpider(CrawlSpider):
         # below logic converts users and comments into a list of dictionaries
         article['comments'] = [{'user': user[comm_indx], 'content': comment[comm_indx]} for comm_indx in
                                range(len(user))]
-
+        
         # content is returned as a list, so below logic joins it into a string
         article['content'] = response.css(".story__content ::text").getall()
         article['content'] = ' '.join(map(str, article['content']))
