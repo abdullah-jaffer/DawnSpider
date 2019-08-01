@@ -41,12 +41,12 @@ class DawnSpider(CrawlSpider):
     def parse_items(self, response):
 
         article = ArticleItem()
-        article['title'] = response.xpath("//meta[@itemprop='name']/@content").get().replace("\n", " ")
+        article['title'] = response.xpath("//*[@itemprop='name']/@content").get().replace("\n", " ")
         article['cover_image_url'] = response.css(".media--uneven img::attr(src)").get()
         article['image_urls'] = response.css(".media--center ::attr(src)").getall()
-        article['published_time'] = response.xpath("//meta[@property='article:published_time']/@content").get()
+        article['published_time'] = response.xpath("//*[@property='article:published_time']/@content").get()
         article['updated_time'] = response.css(".timestamp--time::text").getall()
-        article['authors'] = response.xpath("//meta[@name='author']/@content").get()
+        article['authors'] = response.xpath("//*[@name='author']/@content").get()
         article['tweets'] = response.css(".Twitter-tweet a::attr(href)").getall()
         user = response.css(".comment__author::text").getall()
         comment = response.css(".comment__body p::text").getall()
