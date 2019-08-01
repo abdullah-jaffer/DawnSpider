@@ -41,25 +41,18 @@ class DawnSpider(CrawlSpider):
     def parse_items(self, response):
 
         article = ArticleItem()
-        article['title'] = response.css(".template__header .story__link::text").get().replace("\n", " ")
+        article['title'] = response.xpath("//meta[@itemprop='name']/@content").get().replace("\n", " ")
         article['cover_image_url'] = response.css(".media--uneven img::attr(src)").get()
         article['image_urls'] = response.css(".media--center ::attr(src)").getall()
-        article['published_date'] = response.css(".story__time::text").get()
-        article['updated_date'] = response.css(".timestamp--time::text").getall()
-        
-        # authors can have different selectors depending upon page type
-        if response.css(".template__header .story__byline a::text").getall():
-            article['authors'] = response.css(".template__header .story__byline a::text").getall()
-        else:
-            article['authors'] = response.css(".template__main .story__byline a::text").getall()
+        article['published_time'] = response.xpath("//meta[@property='article:published_time']/@content").get()
+        article['updated_time'] = response.css(".timestamp--time::text").getall()
+        article['authors'] = response.xpath("//meta[@name='author']/@content").get()
         article['tweets'] = response.css(".Twitter-tweet a::attr(href)").getall()
         user = response.css(".comment__author::text").getall()
         comment = response.css(".comment__body p::text").getall()
-        
         # below logic converts users and comments into a list of dictionaries
         article['comments'] = [{'user': user[comm_indx], 'content': comment[comm_indx]} for comm_indx in
                                range(len(user))]
-        
         # content is returned as a list, so below logic joins it into a string
         article['content'] = response.css(".story__content ::text").getall()
         article['content'] = ' '.join(map(str, article['content']))
