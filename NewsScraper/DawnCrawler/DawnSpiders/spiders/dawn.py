@@ -12,16 +12,18 @@ class DawnSpider(CrawlSpider):
     ]
     rules = (
         Rule(
-            LinkExtractor(restrict_css= "[class^='nav__item nav__item--']"),
+            LinkExtractor(deny="^((?!/authors/).)*$", ),
+        ),
+        Rule(
+            LinkExtractor(restrict_css="[class^='nav__item nav__item--']", ),
             callback='parse',
             follow=True
         ),
         Rule(
-            LinkExtractor(restrict_css='.story'),
+            LinkExtractor(restrict_css='.story', ),
             callback='parse_items',
             follow=True
-        ),
-
+        )
     )
 
     def parse_items(self, response):
