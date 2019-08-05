@@ -11,8 +11,7 @@ class DawnSpider(CrawlSpider):
 
     ]
     rules = (
-        Rule(LinkExtractor(deny="^((?!/authors/).)*$")),
-        Rule(LinkExtractor(restrict_css="[class^='nav__item nav__item--']"), follow=True),
+        Rule(LinkExtractor(restrict_css="[class^='nav__item nav__item--']", deny="^((?!/authors/).)*$"), follow=True),
         Rule(LinkExtractor(restrict_css='.story'), callback='parse_items', follow=True)
     )
 
@@ -27,8 +26,8 @@ class DawnSpider(CrawlSpider):
         article['tweets'] = response.css(".Twitter-tweet a::attr(href)").getall()
         user = response.css(".comment__author::text").getall()
         comment = response.css(".comment__body p::text").getall()
-        mapped = zip(user, comment)
-        article['comments'] = set(mapped)
+        article['comments'] = [{'user': poster, 'content': content} for poster, content in zip(user, comment)]
         article['content'] = response.css(".story__content ::text").getall()
         article['category'] = response.css(".active a::text").get()
+
         yield article
