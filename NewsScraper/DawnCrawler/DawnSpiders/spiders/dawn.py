@@ -11,27 +11,14 @@ class DawnSpider(CrawlSpider):
 
     ]
     rules = (
-        Rule(
-            LinkExtractor(deny="^((?!/authors/).)*$", ),
-        ),
-        Rule(
-            LinkExtractor(restrict_css="[class^='nav__item nav__item--']", ),
-            callback='parse',
-            follow=True
-        ),
-        Rule(
-            LinkExtractor(restrict_css='.story', ),
-            callback='parse_items',
-            follow=True
-        )
+        Rule(LinkExtractor(deny="^((?!/authors/).)*$")),
+        Rule(LinkExtractor(restrict_css="[class^='nav__item nav__item--']"), follow=True),
+        Rule(LinkExtractor(restrict_css='.story'), callback='parse_items', follow=True)
     )
 
     def parse_items(self, response):
         article = ArticleItem()
-        if response.xpath("//*[@itemprop='name']/@content").get():
-            article['title'] = response.xpath("//*[@itemprop='name']/@content").get().replace("\n", " ")
-        else:
-            article['title'] = "Not given"
+        article['title'] = response.css(".story__link::text").get().replace("\n", " ")
         article['cover_image_url'] = response.css(".media--uneven img::attr(src)").get()
         article['image_urls'] = response.css(".media--center ::attr(src)").getall()
         article['published_time'] = response.xpath("//*[@property='article:published_time']/@content").get()
@@ -40,12 +27,8 @@ class DawnSpider(CrawlSpider):
         article['tweets'] = response.css(".Twitter-tweet a::attr(href)").getall()
         user = response.css(".comment__author::text").getall()
         comment = response.css(".comment__body p::text").getall()
-        # below logic converts users and comments into a list of dictionaries
-        article['comments'] = [{'user': user[comm_indx], 'content': comment[comm_indx]} for comm_indx in
-                               range(len(user))]
-        # content is returned as a list, so below logic joins it into a string
+        mapped = zip(user, comment)
+        article['comments'] = set(mapped)
         article['content'] = response.css(".story__content ::text").getall()
-        article['content'] = ' '.join(article['content'])
-        article['content'] = article['content'].replace("\n", " ").replace("\t", " ")
         article['category'] = response.css(".active a::text").get()
-        return article
+        yield article
