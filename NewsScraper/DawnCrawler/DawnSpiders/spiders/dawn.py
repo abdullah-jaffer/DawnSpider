@@ -12,8 +12,8 @@ class DawnSpider(CrawlSpider):
 
     ]
     rules = (
-        Rule(LinkExtractor(restrict_css="[class^='nav__item nav__item--']", deny="/authors|print/"), follow=True),
-        Rule(LinkExtractor(restrict_css='.story', deny="/authors|print/"), callback='parse_items', follow=True)
+        Rule(LinkExtractor(restrict_css="[class^='nav__item nav__item--']", deny=['/authors/', '/print/']), follow=True),
+        Rule(LinkExtractor(restrict_css='.story', deny=['/authors/', '/print/']), callback='parse_items', follow=True)
     )
 
     def parse_items(self, response):
