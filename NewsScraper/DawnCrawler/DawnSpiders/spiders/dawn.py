@@ -1,6 +1,7 @@
-from DawnSpiders.items import ArticleItem
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
+
+from DawnSpiders.items import ArticleItem
 
 
 class DawnSpider(CrawlSpider):
@@ -11,15 +12,16 @@ class DawnSpider(CrawlSpider):
 
     ]
     rules = (
-        Rule(LinkExtractor(restrict_css="[class^='nav__item nav__item--']", deny="/authors/"), follow=True),
-        Rule(LinkExtractor(restrict_css='.story', deny="/authors/"), callback='parse_items', follow=True)
+        Rule(LinkExtractor(restrict_css="[class^='nav__item nav__item--']", deny="/authors|print/"), follow=True),
+        Rule(LinkExtractor(restrict_css='.story', deny="/authors|print/"), callback='parse_items', follow=True)
     )
 
     def parse_items(self, response):
         article = ArticleItem()
+        article['article_url'] = response.url
         article['title'] = response.css(".story__link::text").get().replace("\n", " ")
         article['cover_image_url'] = response.css(".media--uneven img::attr(src)").get()
-        article['image_urls'] = response.css(".media--center ::attr(src)").getall()
+        article['image_urls'] = response.css(".media--center img::attr(src)").getall()
         article['published_time'] = response.xpath("//*[@property='article:published_time']/@content").get()
         article['updated_time'] = response.css(".timestamp--time::text").getall()
         article['authors'] = response.xpath("//*[@name='author']/@content").get()
