@@ -12,7 +12,7 @@ class DawnSpider(CrawlSpider):
 
     ]
     custom_settings = {
-        'LOG_FILE': 'dawn.log',
+        'LOG_FILE': 'dawn.log'
     }
     rules = (
         Rule(LinkExtractor(restrict_css="[class^='nav__item nav__item--']", deny=['/authors/', '/print/']),
